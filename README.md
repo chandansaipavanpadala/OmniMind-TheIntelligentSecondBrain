@@ -1,58 +1,71 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
-  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white" alt="Supabase" />
-  <img src="https://img.shields.io/badge/Google_Gemini-2.5_Flash-4285F4?style=for-the-badge&logo=google&logoColor=white" alt="Gemini" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind" />
-  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="public/omnimind-banner.svg" alt="OmniMind Banner" width="100%" />
 </p>
 
-<h1 align="center">OmniMind</h1>
-<p align="center"><strong>The Intelligent Second Brain — Dump anything. AI organizes it.</strong></p>
+<h1 align="center">OmniMind | The Intelligent Second Brain</h1>
+
+<p align="center">
+  <strong>Dump any link, thought, or idea. Let 5 specialized AI agents organize your life automatically.</strong>
+</p>
+
+<p align="center">
+  <a href="#features">Features</a> &bull;
+  <a href="#tech-stack">Tech Stack</a> &bull;
+  <a href="#architecture">Architecture</a> &bull;
+  <a href="#setup">Setup</a> &bull;
+  <a href="#deployment">Deployment</a> &bull;
+  <a href="#database-schema">Database</a> &bull;
+  <a href="#license">License</a>
+</p>
 
 ---
 
-## About
+## Overview
 
-Modern life generates an overwhelming volume of information. You find a recipe while scrolling Instagram at midnight. A stock tip surfaces in a Telegram group. A friend texts you a travel recommendation. A startup idea strikes in the shower. By the time you sit down to organize it all, half of it is gone.
+OmniMind is a full-stack SaaS application that acts as your **intelligent second brain**. Paste any URL, thought, recipe, movie recommendation, or stock tip into the universal Omni-Bar, and OmniMind's multi-agent AI system will automatically:
 
-**OmniMind** solves this with a single-input paradigm called the **Omni-Bar**. Paste literally anything — an Instagram Reel URL, a YouTube video, a raw thought, a movie recommendation, or a stock ticker — and OmniMind's AI engine takes over. Powered by **Google Gemini 2.5 Flash**, the system performs real-time content analysis. It scrapes metadata from URLs using the **Microlink API** (bypassing Instagram's bot protection to extract actual captions and hashtags), feeds the enriched context to Gemini with category-specific rules, and receives back a structured classification and summary.
+1. **Scrape metadata** from the submitted link using the Microlink API
+2. **Classify** the content into one of five specialized domains using Google Gemini AI
+3. **Summarize** the content with a concise, AI-generated description
+4. **Store** the organized data in a secure, user-isolated Supabase database
 
-The classified data is then automatically routed into one of five specialized **Supabase PostgreSQL** tables — each mapped to an AI agent: Travel, Food, Knowledge Base, Movies, and Stocks. Every record is attached to the authenticated user's `user_id` via Supabase SSR Auth. Row Level Security ensures absolute data isolation between users.
-
-Each agent has a dedicated dashboard view with full-text search, card-based masonry rendering, and smart URL detection. The Travel agent goes further by integrating the browser **Geolocation API**, allowing users to sort saved destinations by proximity to their current location using the Haversine distance formula.
-
-The entire application is built on the **Next.js 16 App Router** with Turbopack, using Server Components for the auth-guarded layout and Client Components for interactive views. The glassmorphic, gradient-driven UI is powered by **Tailwind CSS 4** with a custom violet design system that supports seamless dark/light mode switching via `next-themes`.
-
-OmniMind is not just a bookmarking tool. It is an AI-powered cognitive extension — a second brain that thinks, categorizes, and remembers so you don't have to.
+No folders. No manual tagging. Just dump and go.
 
 ---
 
 ## Features
 
-### The Omni-Bar
-A universal input that accepts any content — URLs, raw text, ideas, recommendations. OmniMind's AI engine analyzes the input and routes it to the correct agent automatically. No manual tagging, no folder selection, no cognitive overhead.
+- **Universal Omni-Bar** -- A single input field that accepts any URL, thought, or freeform text. AI handles the rest.
+- **5 Specialized AI Agents** -- Each agent manages a distinct life domain:
+  - **Travel Agent** -- Destinations, trips, adventure spots, and travel tips
+  - **Food Agent** -- Recipes, restaurants, street food finds, and cooking instructions
+  - **Knowledge Base Agent** -- Startup ideas, tech tips, productivity hacks, and concepts
+  - **Movies Agent** -- Watchlists, reviews, recommendations, and trailers
+  - **Stocks Agent** -- Finance insights, crypto, market analysis, and investment notes
+- **Intelligent Metadata Scraping** -- Extracts titles, descriptions, and context from submitted links via the Microlink API before AI analysis.
+- **Gemini AI with Model Fallback** -- Uses `gemini-2.5-flash` as the primary model with automatic fallback to `gemini-flash-latest` for resilience.
+- **Per-Agent Views** -- Dedicated pages for each agent with search, filtering, and card-based layouts.
+- **Geolocation Sorting** -- Travel Agent supports sorting saved spots by proximity using the Haversine formula.
+- **Secure Authentication** -- Full email/password auth flow via Supabase Auth (sign up, login, password reset, email confirmation).
+- **Row Level Security (RLS)** -- Every database query is scoped to `auth.uid() = user_id`, ensuring strict data isolation between users.
+- **Dark Mode / Light Mode** -- Seamless theme switching with `next-themes`.
+- **Responsive Design** -- Fully responsive from mobile to desktop with a collapsible agent navigation bar.
+- **Production-Ready Landing Page** -- A polished, animated landing page with gradient orbs, floating mockup, and agent showcase section.
 
-### 5 Specialized AI Agents
+---
 
-| Agent | Domain | Database Columns |
-|-------|--------|-----------------|
-| **Travel** | Destinations, trips, adventure | `insta_url`, `ai_tips`, `latitude`, `longitude` |
-| **Food** | Recipes, restaurants, street food | `insta_url`, `instructions`, `dish_name` |
-| **Knowledge Base** | Ideas, tech tips, startups | `title`, `description` |
-| **Movies** | Films, series, anime, reviews | `title`, `platform` |
-| **Stocks** | Finance, crypto, markets | `ticker`, `notes` |
+## Tech Stack
 
-### Metadata Scraping with Bot Bypass
-Before sending content to Gemini, OmniMind extracts metadata (titles, captions, hashtags) via the Microlink API. This bypasses Instagram's bot protection to retrieve the actual reel caption — enabling accurate categorization based on real content, not just a URL string.
-
-### Travel Agent: Geolocation Sorting
-The Travel agent integrates the browser Geolocation API. Users can sort their saved destinations by distance from their current location using the Haversine formula.
-
-### Full Authentication & Data Isolation
-Supabase SSR Auth with email/password login, sign-up, and password recovery. Row Level Security (RLS) ensures each user can only read, write, update, and delete their own data.
-
-### Dark/Light Mode
-Powered by `next-themes` with a hand-crafted violet design system. Instant toggling with animated sun/moon icons and zero flash of unstyled content.
+| Layer          | Technology                                                                 |
+|----------------|---------------------------------------------------------------------------|
+| **Framework**  | [Next.js](https://nextjs.org/) (App Router, React Server Components)     |
+| **Language**   | TypeScript                                                                |
+| **AI Engine**  | [Google Gemini AI](https://ai.google.dev/) (`@google/generative-ai`)     |
+| **Database**   | [Supabase](https://supabase.com/) (PostgreSQL + Auth + RLS)              |
+| **Metadata**   | [Microlink API](https://microlink.io/) (link scraping and extraction)    |
+| **Styling**    | [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) |
+| **Hosting**    | [Vercel](https://vercel.com/)                                             |
+| **Auth**       | Supabase Auth (SSR via `@supabase/ssr`)                                   |
 
 ---
 
@@ -60,159 +73,265 @@ Powered by `next-themes` with a hand-crafted violet design system. Instant toggl
 
 ```
 User Input (Omni-Bar)
-       |
-       v
-  /api/analyze (Next.js Route Handler)
-       |
-       +-- 1. Microlink API --> Extract metadata (title, caption, hashtags)
-       |
-       +-- 2. Gemini 2.5 Flash --> Categorize + generate summary
-       |
-       +-- 3. Supabase Insert --> Route to correct table with user_id
-              |
-              +-- travel_spots
-              +-- recipes
-              +-- startup_ideas
-              +-- movie_watchlist
-              +-- stock_tracker
+        |
+        v
+  /api/analyze (POST)
+        |
+        +---> 1. Auth Check (Supabase SSR cookie session)
+        |
+        +---> 2. Metadata Scraper (Microlink API)
+        |
+        +---> 3. Gemini AI Classification + Summarization
+        |           |
+        |           +---> Category: Travel | Food | Ideas | Movies | Stocks
+        |           +---> Summary:  1-sentence AI description
+        |
+        +---> 4. Supabase DB Insert (service_role, scoped to user_id)
+        |
+        v
+  JSON Response --> Frontend Result Banner
 ```
 
----
+**Key Design Decisions:**
 
-## Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| **Framework** | Next.js 16 (App Router, Turbopack) |
-| **Language** | TypeScript 5 |
-| **Styling** | Tailwind CSS 4 |
-| **Auth & Database** | Supabase (PostgreSQL + SSR Auth + RLS) |
-| **AI Engine** | Google Gemini 2.5 Flash |
-| **Metadata Extraction** | Microlink API |
-| **Theming** | next-themes |
+- The `/api/analyze` route uses `createServerClient` with cookies for **session-based auth verification**, ensuring only authenticated users can submit content.
+- Database inserts use the **service_role key** to bypass RLS during writes (the API route validates the user first), while all client-side reads go through the **publishable key** and are protected by RLS policies.
+- Each table has a unique column schema tailored to its domain (e.g., `insta_url` + `ai_tips` for Travel, `ticker` + `notes` for Stocks).
 
 ---
 
-## Getting Started
+## Setup
 
 ### Prerequisites
 
-- Node.js 18+
-- A [Supabase](https://supabase.com) project with Auth enabled
-- A [Google AI Studio](https://aistudio.google.com) API key
+- [Node.js](https://nodejs.org/) v18 or later
+- A [Supabase](https://supabase.com/) project
+- A [Google AI Studio](https://aistudio.google.com/) API key for Gemini
+- (Optional) A [Vercel](https://vercel.com/) account for deployment
 
-### Environment Variables
-
-Create a `.env.local` file in the project root:
-
-```env
-# Supabase (public — safe for browser)
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_anon_key
-
-# Supabase Admin (server-only — never expose to client)
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-
-# Google Gemini
-GEMINI_API_KEY=your_gemini_api_key
-```
-
-> `SUPABASE_SERVICE_ROLE_KEY` intentionally lacks the `NEXT_PUBLIC_` prefix. It is only accessible in server-side Route Handlers and is never shipped to the browser.
-
-### Installation
+### 1. Clone the Repository
 
 ```bash
 git clone https://github.com/your-username/omnimind.git
 cd omnimind
+```
+
+### 2. Install Dependencies
+
+```bash
 npm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env.local` file in the project root with the following variables:
+
+```env
+# Supabase Configuration
+# Found in: Supabase Dashboard > Project Settings > API
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
+
+# Supabase Service Role Key (server-side only, never expose to client)
+# Found in: Supabase Dashboard > Project Settings > API > service_role
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Google Gemini AI
+# Found in: https://aistudio.google.com/apikey
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+> **Important for Vercel Deployment:** When deploying to Vercel, add all four environment variables above to your Vercel project settings under **Settings > Environment Variables**. Vercel automatically provides `VERCEL_URL`, which OmniMind uses to resolve production URLs dynamically.
+
+**Required Environment Variables Summary:**
+
+| Variable                                | Where to Find                            | Scope        |
+|-----------------------------------------|------------------------------------------|--------------|
+| `NEXT_PUBLIC_SUPABASE_URL`              | Supabase Dashboard > Settings > API      | Client + Server |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`  | Supabase Dashboard > Settings > API      | Client + Server |
+| `SUPABASE_SERVICE_ROLE_KEY`             | Supabase Dashboard > Settings > API      | Server only  |
+| `GEMINI_API_KEY`                        | Google AI Studio > API Keys              | Server only  |
+
+### 4. Set Up the Database
+
+Run the following SQL in your Supabase SQL Editor to create the required tables and enable Row Level Security:
+
+```sql
+-- Travel Spots
+CREATE TABLE IF NOT EXISTS travel_spots (
+  id BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  insta_url TEXT,
+  ai_tips TEXT,
+  latitude DOUBLE PRECISION,
+  longitude DOUBLE PRECISION
+);
+
+-- Recipes
+CREATE TABLE IF NOT EXISTS recipes (
+  id BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  insta_url TEXT,
+  dish_name TEXT,
+  instructions TEXT
+);
+
+-- Startup Ideas
+CREATE TABLE IF NOT EXISTS startup_ideas (
+  id BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT,
+  description TEXT
+);
+
+-- Movie Watchlist
+CREATE TABLE IF NOT EXISTS movie_watchlist (
+  id BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  title TEXT,
+  platform TEXT
+);
+
+-- Stock Tracker
+CREATE TABLE IF NOT EXISTS stock_tracker (
+  id BIGSERIAL PRIMARY KEY,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  ticker TEXT,
+  notes TEXT
+);
+```
+
+Then enable RLS (see [Database Security](#database-security) below).
+
+### 5. Configure Supabase Auth Redirects
+
+In your Supabase Dashboard, navigate to **Authentication > URL Configuration** and add the following to your **Redirect URLs**:
+
+- `http://localhost:3000/**` (for local development)
+- `https://your-vercel-domain.vercel.app/**` (for production)
+
+### 6. Run the Development Server
+
+```bash
 npm run dev
 ```
 
-### Database Setup
+Open [http://localhost:3000](http://localhost:3000) to see OmniMind in action.
 
-Run the following SQL in your Supabase SQL Editor to create the required tables and security policies:
+---
+
+## Deployment
+
+### Deploy to Vercel
+
+1. Push your repository to GitHub.
+2. Import the repository in [Vercel](https://vercel.com/new).
+3. Add the following environment variables in Vercel project settings:
+   - `NEXT_PUBLIC_SUPABASE_URL`
+   - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GEMINI_API_KEY`
+4. Deploy. Vercel automatically sets `VERCEL_URL`, which OmniMind uses to build dynamic redirect URLs.
+
+> **Custom Domain:** If you configure a custom domain, also set `NEXT_PUBLIC_SITE_URL=https://yourdomain.com` in Vercel environment variables. This takes highest priority for URL resolution.
+
+---
+
+## Database Security
+
+### Row Level Security (RLS)
+
+This is the **most critical step** for a live, multi-user deployment. Without RLS, any authenticated user could read or modify another user's data.
+
+Run the following SQL in your Supabase SQL Editor:
 
 ```sql
--- Tables
-CREATE TABLE travel_spots (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  insta_url TEXT,
-  ai_tips TEXT,
-  latitude FLOAT,
-  longitude FLOAT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
+-- ============================================================
+-- ENABLE ROW LEVEL SECURITY ON ALL TABLES
+-- ============================================================
 
-CREATE TABLE recipes (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  insta_url TEXT,
-  dish_name TEXT,
-  instructions TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE startup_ideas (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  title TEXT,
-  description TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE movie_watchlist (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  title TEXT,
-  platform TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
-CREATE TABLE stock_tracker (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id),
-  ticker TEXT,
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE travel_spots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE startup_ideas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE travel_spots   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recipes        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE startup_ideas  ENABLE ROW LEVEL SECURITY;
 ALTER TABLE movie_watchlist ENABLE ROW LEVEL SECURITY;
-ALTER TABLE stock_tracker ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_tracker  ENABLE ROW LEVEL SECURITY;
 
--- RLS Policies (all tables)
--- SELECT
-CREATE POLICY "select_own" ON travel_spots FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "select_own" ON recipes FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "select_own" ON startup_ideas FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "select_own" ON movie_watchlist FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "select_own" ON stock_tracker FOR SELECT USING (auth.uid() = user_id);
+-- ============================================================
+-- RLS POLICIES: Users can only SELECT, INSERT, DELETE their own rows
+-- ============================================================
 
--- INSERT
-CREATE POLICY "insert_own" ON travel_spots FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "insert_own" ON recipes FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "insert_own" ON startup_ideas FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "insert_own" ON movie_watchlist FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "insert_own" ON stock_tracker FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Travel Spots
+CREATE POLICY "Users can view their own travel spots"
+  ON travel_spots FOR SELECT
+  USING (auth.uid() = user_id);
 
--- UPDATE
-CREATE POLICY "update_own" ON travel_spots FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "update_own" ON recipes FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "update_own" ON startup_ideas FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "update_own" ON movie_watchlist FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "update_own" ON stock_tracker FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own travel spots"
+  ON travel_spots FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
 
--- DELETE
-CREATE POLICY "delete_own" ON travel_spots FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "delete_own" ON recipes FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "delete_own" ON startup_ideas FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "delete_own" ON movie_watchlist FOR DELETE USING (auth.uid() = user_id);
-CREATE POLICY "delete_own" ON stock_tracker FOR DELETE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own travel spots"
+  ON travel_spots FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Recipes
+CREATE POLICY "Users can view their own recipes"
+  ON recipes FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own recipes"
+  ON recipes FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own recipes"
+  ON recipes FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Startup Ideas
+CREATE POLICY "Users can view their own ideas"
+  ON startup_ideas FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own ideas"
+  ON startup_ideas FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own ideas"
+  ON startup_ideas FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Movie Watchlist
+CREATE POLICY "Users can view their own movies"
+  ON movie_watchlist FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own movies"
+  ON movie_watchlist FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own movies"
+  ON movie_watchlist FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- Stock Tracker
+CREATE POLICY "Users can view their own stocks"
+  ON stock_tracker FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own stocks"
+  ON stock_tracker FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own stocks"
+  ON stock_tracker FOR DELETE
+  USING (auth.uid() = user_id);
 ```
+
+> **Note:** The `/api/analyze` route uses the `service_role` key to insert data, which bypasses RLS. This is intentional -- the route authenticates the user via session cookies first, then inserts with the validated `user_id`. Client-side reads from `AgentView` use the publishable key, which is fully subject to RLS policies.
 
 ---
 
@@ -220,32 +339,47 @@ CREATE POLICY "delete_own" ON stock_tracker FOR DELETE USING (auth.uid() = user_
 
 ```
 omnimind/
-+-- app/
-|   +-- page.tsx                    # Landing page
-|   +-- layout.tsx                  # Root layout + ThemeProvider
-|   +-- api/analyze/route.ts        # AI Engine + Supabase Bridge
-|   +-- auth/                       # Login, Sign-up, Password Recovery
-|   +-- dashboard/
-|       +-- layout.tsx              # Auth-guarded dashboard shell
-|       +-- page.tsx                # Omni-Bar + Agent Grid
-|       +-- travel/page.tsx         # Travel Agent view
-|       +-- food/page.tsx           # Food Agent view
-|       +-- ideas/page.tsx          # Knowledge Base view
-|       +-- movies/page.tsx         # Movies Agent view
-|       +-- stocks/page.tsx         # Stocks Agent view
-+-- components/
-|   +-- agent-view.tsx              # Reusable data grid with search
-|   +-- navbar.tsx                  # Landing page navbar
-|   +-- theme-provider.tsx          # next-themes wrapper
-|   +-- theme-toggle.tsx            # Dark/Light toggle
-+-- lib/supabase/
-    +-- client.ts                   # Browser Supabase client
-    +-- server.ts                   # Server Supabase client (SSR)
-    +-- proxy.ts                    # Auth session refresh proxy
+├── app/
+│   ├── api/analyze/        # AI classification + DB insert API route
+│   ├── auth/               # Auth pages (login, sign-up, confirm, reset)
+│   ├── dashboard/          # Main dashboard + per-agent sub-pages
+│   │   ├── travel/
+│   │   ├── food/
+│   │   ├── ideas/
+│   │   ├── movies/
+│   │   └── stocks/
+│   ├── protected/          # Post-auth redirect page
+│   ├── layout.tsx          # Root layout with theme provider
+│   └── page.tsx            # Landing page
+├── components/
+│   ├── agent-view.tsx      # Reusable agent data viewer (search, cards, delete)
+│   ├── login-form.tsx      # Login form component
+│   ├── sign-up-form.tsx    # Sign-up form component
+│   ├── forgot-password-form.tsx
+│   ├── update-password-form.tsx
+│   ├── navbar.tsx          # Landing page navbar
+│   └── ui/                 # shadcn/ui primitives (Button, Card, Input, etc.)
+├── lib/
+│   ├── supabase/
+│   │   ├── client.ts       # Browser Supabase client
+│   │   ├── server.ts       # Server Supabase client (cookies)
+│   │   └── proxy.ts        # Supabase middleware proxy
+│   └── utils.ts            # cn(), getBaseUrl(), hasEnvVars
+├── public/                 # Static assets, OG images
+├── .env.local              # Environment variables (not committed)
+├── next.config.ts
+├── tailwind.config.ts
+└── package.json
 ```
 
 ---
 
 ## License
 
-MIT License. Built by an ECE student who believes AI should organize life, not complicate it.
+This project is provided as-is for personal and educational use.
+
+---
+
+<p align="center">
+  <sub>Built with Next.js, Supabase, and Google Gemini AI</sub>
+</p>

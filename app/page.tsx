@@ -100,7 +100,7 @@ export default function LandingPage() {
                   <div className="w-3 h-3 rounded-full bg-red-400" />
                   <div className="w-3 h-3 rounded-full bg-yellow-400" />
                   <div className="w-3 h-3 rounded-full bg-green-400" />
-                  <span className="ml-3 text-xs text-muted-foreground font-mono">localhost:3000/dashboard</span>
+                  <span className="ml-3 text-xs text-muted-foreground font-mono">omnimind.app/dashboard</span>
                 </div>
                 
                 {/* Fake Omni-Bar */}
