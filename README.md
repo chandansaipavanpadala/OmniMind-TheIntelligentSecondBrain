@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="public/omnimind-banner.svg" alt="OmniMind Banner" width="100%" />
-</p>
-
 <h1 align="center">OmniMind | The Intelligent Second Brain</h1>
 
 <p align="center">
