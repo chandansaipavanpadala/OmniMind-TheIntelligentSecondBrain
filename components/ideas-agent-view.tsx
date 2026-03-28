@@ -97,12 +97,12 @@ export function IdeasAgentView() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-400 flex items-center justify-center text-2xl shadow-lg shadow-violet-500/25">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-400 flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-violet-500/25">
           💡
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Knowledge Base</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} ideas • {allTags.length} tags</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Knowledge Base</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{filtered.length} ideas • {allTags.length} tags</p>
         </div>
       </motion.div>
 
@@ -182,7 +182,7 @@ export function IdeasAgentView() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                 {ideas.map((idea, idx) => (
                   <motion.div
                     key={idea.id}
@@ -203,7 +203,7 @@ export function IdeasAgentView() {
                     </button>
 
                     {/* Title */}
-                    <h3 className="text-sm font-semibold text-foreground mb-2 pr-8 leading-snug">
+                    <h3 className="text-sm font-semibold text-foreground mb-2 pr-8 leading-snug break-words">
                       {idea.title?.startsWith("http") ? (
                         <a href={idea.title} target="_blank" rel="noopener noreferrer" className="hover:text-violet-500 transition-colors">
                           {idea.title.length > 40 ? idea.title.substring(0, 40) + "..." : idea.title}

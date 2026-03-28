@@ -106,11 +106,11 @@ export function MoodPromptBar({ tableName, onFilterIds, accentColor }: MoodPromp
       />
 
       {/* Main container */}
-      <div className="relative glass rounded-2xl p-4">
-        <div className="flex items-start gap-3">
+      <div className="relative glass rounded-2xl p-3 sm:p-4">
+        <div className="flex items-start gap-2 sm:gap-3">
           {/* AI sparkle icon */}
           <motion.div
-            className={`flex-shrink-0 mt-1 w-8 h-8 rounded-lg bg-gradient-to-br ${accent.from} ${accent.to} flex items-center justify-center shadow-lg`}
+            className={`flex-shrink-0 mt-1 w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-gradient-to-br ${accent.from} ${accent.to} flex items-center justify-center shadow-lg`}
             animate={{ rotate: searching ? 360 : 0 }}
             transition={{ duration: 1, repeat: searching ? Infinity : 0, ease: "linear" }}
           >
@@ -125,9 +125,9 @@ export function MoodPromptBar({ tableName, onFilterIds, accentColor }: MoodPromp
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask your AI agent... (e.g., &quot;I'm feeling adventurous&quot; or &quot;comfort food for rainy days&quot;)"
+            placeholder="Ask your AI agent..."
             rows={1}
-            className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none text-sm leading-relaxed resize-none min-h-[36px]"
+            className="flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/60 outline-none text-xs sm:text-sm leading-relaxed resize-none min-h-[32px] sm:min-h-[36px]"
           />
 
           {/* Action buttons */}
@@ -151,7 +151,7 @@ export function MoodPromptBar({ tableName, onFilterIds, accentColor }: MoodPromp
               whileTap={{ scale: 0.95 }}
               onClick={handleSearch}
               disabled={searching || !prompt.trim()}
-              className={`px-5 py-2 rounded-xl text-xs font-semibold text-white transition-all duration-300 shadow-lg
+              className={`px-3 sm:px-5 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs font-semibold text-white transition-all duration-300 shadow-lg flex-shrink-0
                 ${searching || !prompt.trim()
                   ? "bg-muted text-muted-foreground cursor-not-allowed shadow-none"
                   : `bg-gradient-to-r ${accent.from} ${accent.to} hover:shadow-xl`

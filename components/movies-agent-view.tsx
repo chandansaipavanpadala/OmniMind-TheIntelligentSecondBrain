@@ -111,12 +111,12 @@ export function MoviesAgentView() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-400 flex items-center justify-center text-2xl shadow-lg shadow-rose-500/25">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-400 flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-rose-500/25">
           🎬
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Movies Agent</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} titles • {allGenres.length} genres</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Movies Agent</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">{filtered.length} titles • {allGenres.length} genres</p>
         </div>
       </motion.div>
 
@@ -206,9 +206,9 @@ export function MoviesAgentView() {
                       className="group rounded-2xl bg-card border border-border/50 hover:border-rose-500/30 overflow-hidden card-hover"
                     >
                       <Accordion.Header>
-                        <Accordion.Trigger className="w-full flex items-center gap-4 p-4 text-left cursor-pointer">
+                        <Accordion.Trigger className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 text-left cursor-pointer overflow-hidden">
                           {/* Poster */}
-                          <div className="flex-shrink-0 w-14 h-20 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-400/10 overflow-hidden">
+                          <div className="flex-shrink-0 w-11 h-16 sm:w-14 sm:h-20 rounded-lg bg-gradient-to-br from-rose-500/10 to-pink-400/10 overflow-hidden">
                             {movie.image_url ? (
                               <img
                                 src={movie.image_url}
@@ -224,7 +224,7 @@ export function MoviesAgentView() {
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="text-sm font-semibold text-foreground truncate">
+                            <h3 className="text-xs sm:text-sm font-semibold text-foreground truncate">
                               {movie.movie_name || movie.title}
                             </h3>
                             <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">

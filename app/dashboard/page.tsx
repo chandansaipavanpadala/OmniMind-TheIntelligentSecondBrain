@@ -81,8 +81,8 @@ export default function DashboardHome() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-3xl font-bold tracking-tight mb-2">Welcome back 👋</h1>
-        <p className="text-muted-foreground">Paste anything below — AI will organize it for you.</p>
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight mb-1 sm:mb-2">Welcome back 👋</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">Paste anything below — AI will organize it for you.</p>
       </motion.div>
 
       {/* Omni-Bar with Glow Effect */}
@@ -95,7 +95,7 @@ export default function DashboardHome() {
         {/* Glow background */}
         <div className="absolute -inset-1 bg-gradient-to-r from-violet-500/20 via-fuchsia-500/20 to-pink-500/20 rounded-2xl blur-xl opacity-60 animate-pulse-glow" />
         <div className="relative p-[1px] rounded-2xl bg-gradient-to-r from-violet-500/40 via-fuchsia-500/40 to-pink-500/40 animate-border-glow">
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-card">
+          <div className="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-2xl bg-card">
             {/* AI sparkle icon */}
             <motion.div
               animate={{ rotate: loading ? 360 : 0 }}
@@ -112,8 +112,8 @@ export default function DashboardHome() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Paste a URL, recipe idea, movie name, travel spot, stock tip..."
-              className="flex-1 bg-transparent text-foreground placeholder:text-muted-foreground/50 outline-none text-base"
+              placeholder="Paste a URL, recipe, movie, travel spot..."
+              className="flex-1 min-w-0 bg-transparent text-foreground placeholder:text-muted-foreground/50 outline-none text-sm sm:text-base"
             />
 
             <motion.button
@@ -121,7 +121,7 @@ export default function DashboardHome() {
               whileTap={{ scale: 0.95 }}
               onClick={handleAnalyze}
               disabled={loading}
-              className={`px-6 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-300
+              className={`px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-white transition-all duration-300 flex-shrink-0
                 ${loading
                   ? "bg-muted text-muted-foreground cursor-not-allowed"
                   : "bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40"
@@ -174,13 +174,13 @@ export default function DashboardHome() {
           variants={containerVariants}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4"
         >
           {AGENTS.map((agent) => (
             <motion.div key={agent.slug} variants={cardVariants}>
               <Link
                 href={`/dashboard/${agent.slug}`}
-                className={`group relative block p-6 rounded-2xl border border-border/50 bg-card
+                className={`group relative block p-4 sm:p-6 rounded-2xl border border-border/50 bg-card
                             ${agent.borderHover} hover:bg-accent/50
                             transition-all duration-300 hover:-translate-y-1 hover:shadow-xl ${agent.glow}`}
               >
@@ -192,8 +192,8 @@ export default function DashboardHome() {
                   >
                     {agent.icon}
                   </motion.div>
-                  <h3 className="text-lg font-bold mb-1">{agent.name}</h3>
-                  <p className="text-sm text-muted-foreground">{agent.desc}</p>
+                  <h3 className="text-base sm:text-lg font-bold mb-1">{agent.name}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{agent.desc}</p>
                 </div>
                 <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

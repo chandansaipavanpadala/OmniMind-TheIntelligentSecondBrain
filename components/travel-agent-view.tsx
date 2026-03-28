@@ -84,12 +84,12 @@ export function TravelAgentView() {
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center gap-3"
       >
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center text-2xl shadow-lg shadow-sky-500/25">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center text-xl sm:text-2xl shadow-lg shadow-sky-500/25">
           ✈️
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Travel Agent</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Travel Agent</h1>
+          <p className="text-xs sm:text-sm text-muted-foreground">
             {filtered.length} spots across {countryOrder.length} {countryOrder.length === 1 ? "country" : "countries"}
           </p>
         </div>
@@ -140,7 +140,7 @@ export function TravelAgentView() {
                   )}
 
                   {/* Bento Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                     {spots.map((spot, idx) => (
                       <motion.div
                         key={spot.id}
@@ -152,7 +152,7 @@ export function TravelAgentView() {
                         className="group relative rounded-2xl overflow-hidden bg-card border border-border/50 hover:border-sky-500/30 cursor-pointer card-hover"
                       >
                         {/* Image */}
-                        <div className="relative h-40 bg-gradient-to-br from-sky-500/10 to-cyan-400/10 overflow-hidden">
+                        <div className="relative h-32 sm:h-40 bg-gradient-to-br from-sky-500/10 to-cyan-400/10 overflow-hidden">
                           {spot.image_url ? (
                             <img
                               src={spot.image_url}
