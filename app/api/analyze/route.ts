@@ -27,7 +27,7 @@ const CATEGORY_TABLE_MAP: Record<string, string> = {
 // ========================================================
 // Task 1: The "Metadata Scraper" — Cures the AI's blindness
 // ========================================================
-async function scrapeInstagramMetadata(url: string): Promise<string> {
+async function scrapeMetadata(url: string): Promise<{ text: string; imageUrl: string }> {
     try {
         console.log("Scraper: Querying Microlink API for metadata...");
 
@@ -36,33 +36,263 @@ async function scrapeInstagramMetadata(url: string): Promise<string> {
 
         if (!res.ok) {
             console.warn(`Scraper: Microlink returned HTTP ${res.status}. Falling back to raw URL.`);
-            return "";
+            return { text: "", imageUrl: "" };
         }
 
         const json = await res.json();
 
         if (json.status !== "success" || !json.data) {
             console.warn("Scraper: Microlink returned non-success status:", json.status);
-            return "";
+            return { text: "", imageUrl: "" };
         }
 
         const title = json.data.title || "";
         const description = json.data.description || "";
         const combined = `${title} ${description}`.trim();
+        const imageUrl = json.data.image?.url || json.data.logo?.url || "";
 
         if (combined) {
             console.log("Scraper: Microlink extracted metadata successfully.");
             console.log("  Title:", title);
             console.log("  Description:", description);
+            if (imageUrl) console.log("  Image:", imageUrl);
         } else {
             console.warn("Scraper: Microlink returned empty metadata.");
         }
 
-        return combined;
+        return { text: combined, imageUrl };
     } catch (error: any) {
         console.warn("Scraper: Microlink fetch failed:", error.message);
-        return ""; // Graceful fallback: the AI will just use the raw URL
+        return { text: "", imageUrl: "" }; // Graceful fallback
     }
+}
+
+// ========================================================
+// Phase 5 Gemini Prompt — Deep Field Extraction
+// ========================================================
+function buildPhase5Prompt(url: string, caption: string): string {
+    const contextBlock = caption
+        ? `The content's scraped title and caption is: "${caption}"`
+        : `No caption could be extracted. Infer everything from the URL structure: ${url}`;
+
+    return `
+You are the extraction engine for OmniMind, a personal life-hub app.
+A piece of content was submitted with this URL: ${url}
+${contextBlock}
+
+IMPORTANT: Pay close attention to hashtags (e.g. #travel, #food, #recipe, #movie, #stocks).
+Hashtags are the strongest signal for categorization. If #travel or #kerala or #wanderlust appears, it is Travel.
+
+STEP 1: Categorize this content strictly into one of: ${AGENT_CATEGORIES.join(', ')}.
+
+Rules for categorization:
+- Travel: Destinations, trips, flights, hotels, tourist spots, nature, adventure, wanderlust, explore.
+- Food: Recipes, restaurants, cooking, street food, cafes, baking, foodie.
+- Ideas: Startups, business, productivity, tech, innovation, side hustles, coding, life hacks.
+- Movies: Films, trailers, reviews, TV shows, actors, cinema, anime, Netflix, series.
+- Stocks: Finance, investing, trading, crypto, markets, economy, mutual funds.
+
+STEP 2: Based on the category, extract SPECIFIC fields. Follow the exact JSON schema below.
+
+If category is "Food", return:
+{
+  "category": "Food",
+  "summary": "A short 1-sentence description",
+  "dish_name": "The actual name of the dish (e.g., 'Butter Chicken', 'Pasta Carbonara'). If unclear, use the most descriptive name possible.",
+  "steps": [
+    {"step": 1, "text": "Step 1 instruction"},
+    {"step": 2, "text": "Step 2 instruction"}
+  ]
+}
+Extract the real dish_name, NOT "Imported from Instagram". If you can identify cooking steps, extract them. If the content is a restaurant review (not a recipe), use steps like: [{"step": 1, "text": "Visit recommendation and what to order"}].
+
+If category is "Travel", return:
+{
+  "category": "Travel",
+  "summary": "A short 1-sentence description",
+  "place_name": "The specific place/landmark (e.g., 'Eiffel Tower', 'Munnar Hills')",
+  "city": "The city name (e.g., 'Paris', 'Munnar')",
+  "state": "The state/province (e.g., 'Île-de-France', 'Kerala'). Use null if not applicable.",
+  "country": "The country (e.g., 'France', 'India')"
+}
+
+If category is "Ideas", return:
+{
+  "category": "Ideas",
+  "summary": "A short 1-sentence description",
+  "title": "A concise title for this knowledge item",
+  "tags": ["Tag1", "Tag2"]
+}
+Tags should be from common categories like: "Startup", "Coding", "Life Hack", "Productivity", "Tech", "Business", "AI", "Health", "Finance", "Design", "Marketing". Pick 1-3 most relevant tags.
+
+If category is "Movies", return:
+{
+  "category": "Movies",
+  "summary": "A 1-sentence teaser",
+  "movie_name": "The actual movie or show title",
+  "genre": "Primary genre (e.g., 'Action', 'Comedy', 'Sci-Fi', 'Drama', 'Horror', 'Thriller', 'Romance', 'Documentary', 'Anime')",
+  "platform_name": "Streaming platform if identifiable (e.g., 'Netflix', 'Prime Video', 'Hulu', 'Disney+', 'HBO Max'). Use null if unknown.",
+  "ai_summary": "A detailed 2-3 sentence summary of the plot or review content"
+}
+
+If category is "Stocks", return:
+{
+  "category": "Stocks",
+  "summary": "A short 1-sentence description",
+  "stock_name": "Company or asset name (e.g., 'Apple Inc.', 'Bitcoin')",
+  "ticker": "Stock ticker if known (e.g., 'AAPL', 'BTC'). Use null if unknown.",
+  "sector": "Market sector (e.g., 'Tech', 'Healthcare', 'Energy', 'Finance', 'Crypto', 'Consumer', 'Industrial')",
+  "market_cap": "Market cap tier if known: 'Large Cap', 'Mid Cap', 'Small Cap', or null"
+}
+
+Return ONLY the JSON object. No markdown fences, no explanation, no extra text.
+`;
+}
+
+// ========================================================
+// Phase 5 Insert Logic — Smart Upserts & Versioning
+// ========================================================
+
+/**
+ * FOOD: Version-aware insert.
+ * If dish_name already exists for this user, bump the version and append.
+ */
+async function insertFood(data: any, url: string, userId: string, imageUrl: string) {
+    const dishName = data.dish_name || "Unknown Dish";
+    const steps = data.steps || [];
+
+    // Check if this dish already exists for this user
+    const { data: existing } = await supabase
+        .from("recipes")
+        .select("id, version")
+        .eq("user_id", userId)
+        .ilike("dish_name", dishName)
+        .order("version", { ascending: false })
+        .limit(1);
+
+    const nextVersion = existing && existing.length > 0 ? existing[0].version + 1 : 1;
+
+    const payload: Record<string, any> = {
+        insta_url: url,
+        instructions: data.summary,
+        dish_name: dishName,
+        steps: steps,
+        version: nextVersion,
+        user_id: userId,
+    };
+
+    if (imageUrl) payload.image_url = imageUrl;
+
+    const { error } = await supabase.from("recipes").insert(payload);
+
+    return {
+        error,
+        isNewVersion: nextVersion > 1,
+        version: nextVersion,
+    };
+}
+
+/**
+ * TRAVEL: Deduplication via upsert.
+ * If the same place_name + city exists for this user, update instead of insert.
+ */
+async function insertTravel(data: any, url: string, userId: string, imageUrl: string) {
+    const placeName = data.place_name || "Unknown Spot";
+    const city = data.city || "";
+    const state = data.state || null;
+    const country = data.country || "";
+
+    // Check for existing duplicate
+    const { data: existing } = await supabase
+        .from("travel_spots")
+        .select("id")
+        .eq("user_id", userId)
+        .ilike("place_name", placeName)
+        .ilike("city", city)
+        .limit(1);
+
+    if (existing && existing.length > 0) {
+        // Duplicate found — update the existing row
+        const updatePayload: Record<string, any> = {
+            ai_tips: data.summary,
+            insta_url: url,
+            state,
+            country,
+        };
+        if (imageUrl) updatePayload.image_url = imageUrl;
+
+        const { error } = await supabase
+            .from("travel_spots")
+            .update(updatePayload)
+            .eq("id", existing[0].id);
+
+        return { error, isDuplicate: true, action: "updated" };
+    }
+
+    // New entry
+    const payload: Record<string, any> = {
+        insta_url: url,
+        ai_tips: data.summary,
+        place_name: placeName,
+        city,
+        state,
+        country,
+        user_id: userId,
+    };
+    if (imageUrl) payload.image_url = imageUrl;
+
+    const { error } = await supabase.from("travel_spots").insert(payload);
+    return { error, isDuplicate: false, action: "inserted" };
+}
+
+/**
+ * IDEAS (Knowledge Base): Insert with tags.
+ */
+async function insertIdeas(data: any, url: string, userId: string) {
+    const { error } = await supabase.from("startup_ideas").insert({
+        title: data.title || url,
+        description: data.summary,
+        tags: data.tags || [],
+        user_id: userId,
+    });
+    return { error };
+}
+
+/**
+ * MOVIES: Insert with genre, platform, and expanded AI summary.
+ */
+async function insertMovies(data: any, url: string, userId: string, imageUrl: string) {
+    const payload: Record<string, any> = {
+        title: data.movie_name || data.summary,
+        platform: url,
+        movie_name: data.movie_name || null,
+        genre: data.genre || null,
+        platform_name: data.platform_name || null,
+        ai_summary: data.ai_summary || data.summary,
+        user_id: userId,
+    };
+    if (imageUrl) payload.image_url = imageUrl;
+
+    const { error } = await supabase.from("movie_watchlist").insert(payload);
+    return { error };
+}
+
+/**
+ * STOCKS: Insert with sector and market cap.
+ */
+async function insertStocks(data: any, url: string, userId: string, imageUrl: string) {
+    const payload: Record<string, any> = {
+        ticker: data.ticker || url,
+        notes: data.summary,
+        stock_name: data.stock_name || null,
+        sector: data.sector || null,
+        market_cap: data.market_cap || null,
+        user_id: userId,
+    };
+    if (imageUrl) payload.image_url = imageUrl;
+
+    const { error } = await supabase.from("stock_tracker").insert(payload);
+    return { error };
 }
 
 // ========================================================
@@ -70,7 +300,7 @@ async function scrapeInstagramMetadata(url: string): Promise<string> {
 // ========================================================
 export async function POST(req: NextRequest) {
     try {
-        console.log("--- Starting Analysis Request ---");
+        console.log("--- Starting Analysis Request (Phase 5) ---");
 
         // Extract authenticated user from cookies
         const cookieStore = await cookies();
@@ -104,37 +334,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ success: false, error: "Server Configuration Error: Missing API Key" }, { status: 200 });
         }
 
-        // Step 1: Scrape metadata via Microlink
-        const caption = await scrapeInstagramMetadata(url);
+        // Step 1: Scrape metadata via Microlink (now also grabs image)
+        const { text: caption, imageUrl: scrapedImage } = await scrapeMetadata(url);
 
-        // Step 2: Build a context-aware prompt
-        const contextBlock = caption
-            ? `The video's scraped title and caption is: "${caption}"`
-            : `No caption could be extracted. Infer the category from the URL structure: ${url}`;
-
-        const prompt = `
-      You are a categorization engine for a personal life-hub app.
-      An Instagram Reel was submitted with this URL: ${url}
-      ${contextBlock}
-
-      IMPORTANT: Pay close attention to hashtags (e.g. #travel, #food, #recipe, #movie, #stocks).
-      Hashtags are the strongest signal for categorization. If #travel or #kerala or #wanderlust appears, it is Travel.
-
-      Categorize this reel strictly into one of: ${AGENT_CATEGORIES.join(', ')}.
-
-      Rules:
-      - Travel: Destinations, trips, flights, hotels, tourist spots, nature, adventure, wanderlust, explore.
-      - Food: Recipes, restaurants, cooking, street food, cafes, baking, foodie.
-      - Ideas: Startups, business, productivity, tech, innovation, side hustles.
-      - Movies: Films, trailers, reviews, TV shows, actors, cinema, anime, Netflix, series.
-      - Stocks: Finance, investing, trading, crypto, markets, economy, mutual funds.
-
-      Return ONLY a JSON object (no markdown, no explanation):
-      {
-        "category": "category_name",
-        "summary": "a short 1-sentence description of what this reel is about"
-      }
-    `;
+        // Step 2: Build Phase 5 context-aware prompt with deep field extraction
+        const prompt = buildPhase5Prompt(url, caption);
 
         // Step 3: Call Gemini with model fallback
         let result;
@@ -151,9 +355,9 @@ export async function POST(req: NextRequest) {
         const response = await result.response;
         const text = response.text();
 
-        console.log("=== RAW AI RESPONSE ===");
+        console.log("=== RAW AI RESPONSE (Phase 5) ===");
         console.log(text);
-        console.log("=======================");
+        console.log("=================================");
 
         // Step 4: Robust JSON Parsing
         let data: any;
@@ -178,51 +382,60 @@ export async function POST(req: NextRequest) {
         }
 
         // =============================================
-        // Task 2: Supabase Database Bridge
-        // Maps AI output to each table's exact column schema
+        // Phase 5: Smart Insert Router
+        // Each agent has its own insert logic with
+        // deduplication, versioning, and deep fields.
         // =============================================
         const tableName = CATEGORY_TABLE_MAP[data.category];
+        let dbResult: { error: any; [key: string]: any };
 
-        // Build the insert payload based on each table's unique column names
-        let insertPayload: Record<string, string> = {};
         switch (data.category) {
-            case 'Travel':
-                insertPayload = { insta_url: url, ai_tips: data.summary, user_id: user.id };
-                break;
             case 'Food':
-                insertPayload = { insta_url: url, instructions: data.summary, dish_name: "Imported from Instagram", user_id: user.id };
+                dbResult = await insertFood(data, url, user.id, scrapedImage);
+                break;
+            case 'Travel':
+                dbResult = await insertTravel(data, url, user.id, scrapedImage);
                 break;
             case 'Ideas':
-                insertPayload = { description: data.summary, title: url, user_id: user.id };
+                dbResult = await insertIdeas(data, url, user.id);
                 break;
             case 'Movies':
-                insertPayload = { title: data.summary, platform: url, user_id: user.id };
+                dbResult = await insertMovies(data, url, user.id, scrapedImage);
                 break;
             case 'Stocks':
-                insertPayload = { notes: data.summary, ticker: url, user_id: user.id };
+                dbResult = await insertStocks(data, url, user.id, scrapedImage);
                 break;
+            default:
+                dbResult = { error: { message: "Unknown category" } };
         }
 
-        const { error: dbError } = await supabase.from(tableName).insert(insertPayload);
-
-        if (dbError) {
-            console.error(`Supabase insert into '${tableName}' failed:`, dbError.message);
-            // Still return AI result even if DB insert fails
+        if (dbResult.error) {
+            console.error(`Supabase insert into '${tableName}' failed:`, dbResult.error.message);
             return NextResponse.json({
                 success: true,
                 data,
                 saved: false,
-                dbError: dbError.message,
+                dbError: dbResult.error.message,
             }, { status: 200 });
         }
 
-        console.log(`✅ Saved to Supabase table: ${tableName}`);
+        // Build enriched response message
+        let extraInfo = "";
+        if (data.category === "Food" && dbResult.isNewVersion) {
+            extraInfo = ` (Version ${dbResult.version} — existing recipe updated!)`;
+        }
+        if (data.category === "Travel" && dbResult.isDuplicate) {
+            extraInfo = " (Duplicate detected — existing entry updated!)";
+        }
+
+        console.log(`✅ Saved to Supabase table: ${tableName}${extraInfo}`);
 
         return NextResponse.json({
             success: true,
             data,
             saved: true,
             table: tableName,
+            extraInfo,
         }, { status: 200 });
 
     } catch (error: any) {

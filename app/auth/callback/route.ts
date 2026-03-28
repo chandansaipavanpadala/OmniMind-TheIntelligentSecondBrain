@@ -24,8 +24,8 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // If something went wrong, redirect to an error page
+  // If something went wrong, redirect to login with an error message
   return NextResponse.redirect(
-    `${origin}/auth/error?error=Could not authenticate with provider`
+    `${origin}/auth/login?error=Could not authenticate`
   );
 }
