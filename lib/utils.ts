@@ -6,14 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Returns the absolute base URL for the current environment (with trailing slash).
- * Uses the Supabase-recommended pattern so OAuth redirects always resolve
- * to the correct domain — whether that is localhost, a Vercel preview, or
- * a custom production domain.
+ * Returns a clean absolute base URL for the current environment (with trailing slash).
  *
  * Priority:
  * 1. NEXT_PUBLIC_SITE_URL  — set this in Vercel for your production domain
- * 2. NEXT_PUBLIC_VERCEL_URL — auto-injected by Vercel on every deployment
+ * 2. NEXT_PUBLIC_VERCEL_URL — auto-injected by Vercel (hostname only, no protocol)
  * 3. Fallback to http://localhost:3000/ for local development
  */
 export function getURL(): string {
@@ -21,10 +18,20 @@ export function getURL(): string {
     process.env.NEXT_PUBLIC_SITE_URL ??
     process.env.NEXT_PUBLIC_VERCEL_URL ??
     "http://localhost:3000/";
-  // Ensure https:// when not localhost
-  url = url.startsWith("http") ? url : `https://${url}`;
+
+  // Trim whitespace
+  url = url.trim();
+
+  // Strip accidental double-protocol (e.g. "https://https://…")
+  url = url.replace(/^(https?:\/\/)+/, "");
+
+  // Now we have a bare hostname (+ optional path). Add the correct protocol.
+  const isLocalhost = url.startsWith("localhost") || url.startsWith("127.0.0.1");
+  url = isLocalhost ? `http://${url}` : `https://${url}`;
+
   // Ensure trailing slash
   url = url.endsWith("/") ? url : `${url}/`;
+
   return url;
 }
 
