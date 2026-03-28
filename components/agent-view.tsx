@@ -42,16 +42,24 @@ export function AgentView({
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const { data: rows, error: fetchError } = await supabase
+
+      // Try ordering by created_at first; if the column doesn't exist
+      // Supabase will return an error — fall back to unordered fetch.
+      let result = await supabase
         .from(tableName)
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (fetchError) {
-        setError(fetchError.message);
+      if (result.error) {
+        // Retry without ordering (created_at column may not exist yet)
+        result = await supabase.from(tableName).select("*");
+      }
+
+      if (result.error) {
+        setError(result.error.message);
       } else {
-        setData(rows || []);
-        setFiltered(rows || []);
+        setData(result.data || []);
+        setFiltered(result.data || []);
       }
       setLoading(false);
     }

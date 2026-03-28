@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, getBaseUrl } from "@/lib/utils";
+import { cn, getURL } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ export function SignUpForm({
         email,
         password,
         options: {
-          emailRedirectTo: `${getBaseUrl()}/protected`,
+          emailRedirectTo: `${getURL()}protected`,
         },
       });
       if (error) throw error;

@@ -1,6 +1,6 @@
 "use client";
 
-import { cn, getBaseUrl } from "@/lib/utils";
+import { cn, getURL } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -60,7 +60,7 @@ export function LoginForm({
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${getBaseUrl()}/auth/callback`,
+        redirectTo: `${getURL()}auth/callback`,
       },
     });
 
